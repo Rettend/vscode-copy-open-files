@@ -1,0 +1,14 @@
+.git
+.github
+.vscode
+node_modules
+src
+build.config.ts
+bun.lock
+eslint.config.js
+tsconfig.json
+.gitignore
+.eslintignore
+.eslintrc*
+**/*.map
+**/*.ts

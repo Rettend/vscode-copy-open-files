@@ -1,0 +1,53 @@
+{
+  "publisher": "Rettend",
+  "name": "vscode-copy-open-files",
+  "displayName": "vscode-copy-open-files",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "bun@1.2.2",
+  "description": "Copy the contents of all open files",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rettend/vscode-copy-open-files"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.cjs",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-copy-open-files.copyAllOpenFiles",
+        "title": "Copy All Open Files"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vscode-copy-open-files.copyAllOpenFiles",
+        "key": "ctrl+k ctrl+c",
+        "mac": "cmd+k cmd+c"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "bun run compile",
+    "compile": "unbuild",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint . --fix",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.1.1",
+    "@types/bun": "^1.2.2",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^3.2.2",
+    "eslint": "^9.19.0",
+    "typescript": "^5.7.3",
+    "unbuild": "^3.3.1"
+  }
+}
