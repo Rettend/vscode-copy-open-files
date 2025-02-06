@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
         displayPath = path.relative(workspaceFolder, fileName)
       }
 
-      output += `>>> ${displayPath}\n${content}\n\n`
+      output += `--- ${displayPath}\n${content}\n\n`
     }
 
     try {
