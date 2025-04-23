@@ -6,10 +6,12 @@ export default defineBuildConfig({
   ],
   outDir: './out',
   rollup: {
+    inlineDependencies: true,
     output: {
       entryFileNames: 'extension.cjs',
       format: 'cjs',
     },
   },
   externals: ['vscode'],
+  clean: true,
 })
