@@ -24,6 +24,10 @@
       {
         "command": "vscode-copy-open-files.copyAllOpenFiles",
         "title": "Copy All Open Files"
+      },
+      {
+        "command": "vscode-copy-open-files.copyDirectoryStructure",
+        "title": "Copy Directory Structure"
       }
     ],
     "keybindings": [
@@ -32,7 +36,16 @@
         "key": "ctrl+k ctrl+c",
         "mac": "cmd+k cmd+c"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "vscode-copy-open-files.copyDirectoryStructure",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "bun run compile",
@@ -40,6 +53,9 @@
     "watch": "tsc -watch -p ./",
     "lint": "eslint . --fix",
     "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "ignore": "^5.3.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.1.1",
