@@ -28,6 +28,10 @@
       {
         "command": "vscode-copy-open-files.copyDirectoryStructure",
         "title": "Copy Directory Structure"
+      },
+      {
+        "command": "vscode-copy-open-files.showCopyOptionsPanel",
+        "title": "Configure Copy Options for Open Files"
       }
     ],
     "keybindings": [
@@ -53,7 +57,7 @@
     "watch": "tsc -watch -p ./",
     "lint": "eslint . --fix",
     "package": "vsce package --no-dependencies",
-    "release": "bumpp && bun run build"
+    "release": "bumpp && bun run package"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.1.1",
