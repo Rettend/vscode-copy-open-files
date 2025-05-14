@@ -52,13 +52,15 @@
     "compile": "unbuild",
     "watch": "tsc -watch -p ./",
     "lint": "eslint . --fix",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "release": "bumpp && bun run build"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.1.1",
     "@types/bun": "^1.2.2",
     "@types/vscode": "^1.96.0",
-    "@vscode/vsce": "^3.2.2",
+    "@vscode/vsce": "^3.3.2",
+    "bumpp": "^10.1.0",
     "eslint": "^9.19.0",
     "ignore": "^5.3.1",
     "typescript": "^5.7.3",
