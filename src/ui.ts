@@ -1,102 +1,8 @@
-import type { FileTreeNode } from './types'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
+import { buildOpenFilesTree } from './utils'
 
-export function buildOpenFilesTree(fileUris: vscode.Uri[], currentWorkspaceFolder?: vscode.WorkspaceFolder): string {
-  function formatNodesRecursive(currentNode: FileTreeNode, currentIndent: string): string {
-    let str = ''
-    const keys = Object.keys(currentNode).sort((a, b) => {
-      const aIsDir = currentNode[a] !== null
-      const bIsDir = currentNode[b] !== null
-      if (aIsDir && !bIsDir) {
-        return -1
-      }
-      if (!aIsDir && bIsDir) {
-        return 1
-      }
-      return a.localeCompare(b)
-    })
-
-    keys.forEach((key, index) => {
-      const isLast = index === keys.length - 1
-      const connector = isLast ? '└── ' : '├── '
-      const isDir = currentNode[key] !== null
-
-      str += `${currentIndent}${connector}${key}${isDir ? '/' : ''}\n`
-      if (isDir) {
-        str += formatNodesRecursive(currentNode[key] as FileTreeNode, `${currentIndent}${isLast ? '    ' : '│   '}`)
-      }
-    })
-    return str
-  }
-
-  function buildTreeForPathsList(pathsList: string[], rootDisplayName?: string): string {
-    if (pathsList.length === 0) {
-      return ''
-    }
-    const localTree: FileTreeNode = {}
-    pathsList.forEach((p) => {
-      const parts = p.replace(/\\/g, '/').split('/')
-      let currentLevel = localTree
-      parts.forEach((part, index) => {
-        if (part === '' && index === 0 && parts.length > 1 && parts[0] === '') {
-          return
-        }
-        if (part === '' && index > 0 && parts.length > 1) {
-          return
-        }
-
-        const isFile = index === parts.length - 1
-        if (!currentLevel[part]) {
-          currentLevel[part] = isFile ? null : {}
-        }
-        if (!isFile) {
-          currentLevel = currentLevel[part] as FileTreeNode
-        }
-      })
-    })
-
-    let treeStr = rootDisplayName ? `${rootDisplayName}/\n` : ''
-    treeStr += formatNodesRecursive(localTree, '')
-    return treeStr
-  }
-
-  let overallStructureString = ''
-  const workspaceFilePaths: string[] = []
-  const nonWorkspaceFilePaths: string[] = []
-
-  if (currentWorkspaceFolder) {
-    fileUris.forEach((uri) => {
-      if (uri.fsPath.startsWith(currentWorkspaceFolder.uri.fsPath)) {
-        workspaceFilePaths.push(path.relative(currentWorkspaceFolder.uri.fsPath, uri.fsPath))
-      }
-      else {
-        nonWorkspaceFilePaths.push(uri.fsPath)
-      }
-    })
-  }
-  else {
-    fileUris.forEach(uri => nonWorkspaceFilePaths.push(uri.fsPath))
-  }
-
-  if (workspaceFilePaths.length > 0 && currentWorkspaceFolder) {
-    overallStructureString += buildTreeForPathsList(workspaceFilePaths, path.basename(currentWorkspaceFolder.uri.fsPath))
-  }
-
-  if (nonWorkspaceFilePaths.length > 0) {
-    if (overallStructureString.length > 0 && !overallStructureString.endsWith('\n\n') && !overallStructureString.endsWith('\n')) {
-      overallStructureString += '\n'
-    }
-    else if (overallStructureString.length > 0 && !overallStructureString.endsWith('\n\n')) {
-      overallStructureString += '\n'
-    }
-    overallStructureString += buildTreeForPathsList(nonWorkspaceFilePaths)
-  }
-
-  return overallStructureString
-}
-
-export async function copyOpenFilesHelper(copyContent: boolean, copyStructure: boolean): Promise<void> {
+function _getOpenUniqueFileUris(): vscode.Uri[] {
   const tabs = vscode.window.tabGroups.all.flatMap(group => group.tabs)
   const uniqueFileUris = new Set<string>()
   tabs.forEach((tab) => {
@@ -104,11 +10,32 @@ export async function copyOpenFilesHelper(copyContent: boolean, copyStructure: b
       uniqueFileUris.add(tab.input.uri.toString())
     }
   })
-  const fileUris = Array.from(uniqueFileUris).map(uriStr => vscode.Uri.parse(uriStr))
+  return Array.from(uniqueFileUris).map(uriStr => vscode.Uri.parse(uriStr))
+}
+
+async function _formatFileContents(fileUris: vscode.Uri[], workspaceFolder?: vscode.WorkspaceFolder): Promise<string> {
+  let contentOutput = ''
+  for (const uri of fileUris) {
+    const document = await vscode.workspace.openTextDocument(uri)
+    const content = document.getText()
+    let displayPath = uri.fsPath
+    if (workspaceFolder && uri.fsPath.startsWith(workspaceFolder.uri.fsPath)) {
+      displayPath = path.relative(workspaceFolder.uri.fsPath, uri.fsPath)
+    }
+    displayPath = displayPath.replace(/\\/g, '/')
+    contentOutput += `--- ${displayPath}\n${content}\n\n`
+  }
+  return contentOutput
+}
+
+export async function copyOpenFilesHelper(copyContent: boolean, copyStructure: boolean): Promise<void> {
+  const fileUris = _getOpenUniqueFileUris()
+
   if (fileUris.length === 0) {
     vscode.window.showWarningMessage('No open files found to copy.')
     return
   }
+
   let output = ''
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
 
@@ -124,18 +51,11 @@ export async function copyOpenFilesHelper(copyContent: boolean, copyStructure: b
       }
     }
   }
+
   if (copyContent) {
-    for (const uri of fileUris) {
-      const document = await vscode.workspace.openTextDocument(uri)
-      const content = document.getText()
-      let displayPath = uri.fsPath
-      if (workspaceFolder && uri.fsPath.startsWith(workspaceFolder.uri.fsPath)) {
-        displayPath = path.relative(workspaceFolder.uri.fsPath, uri.fsPath)
-      }
-      displayPath = displayPath.replace(/\\/g, '/')
-      output += `--- ${displayPath}\n${content}\n\n`
-    }
+    output += await _formatFileContents(fileUris, workspaceFolder)
   }
+
   if (output.trim()) {
     await vscode.env.clipboard.writeText(output.trimEnd())
     vscode.window.showInformationMessage('Selected open file information copied to clipboard.')
