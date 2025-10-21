@@ -80,7 +80,6 @@ export async function buildDirectoryStructure(
     currentIg = ignore().add(ig).add(localIgInstance)
   }
   catch {
-    // No local .gitignore found, continue with parent rules
   }
 
   try {

@@ -4,15 +4,15 @@ Simple extension that provides two main functionalities:
 
 1. Copies the contents and/or directory structure of all currently open files in your VS Code window.
 2. Copies the directory structure of a selected folder, respecting `.gitignore` rules.
+3. Imports and opens files from a pasted Import List.
 
 Perfect for sharing code context or project structure with LLMs or colleagues.
 
 ## Installation
 
 1. Download the `.vsix` file from the [latest release](https://github.com/rettend/vscode-copy-open-files/releases)
-2. In VS Code, open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
-3. Type "Install from VSIX" and select the command
-4. Choose the downloaded `.vsix` file
+2. In VS Code, open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`), choose "Extensions: Install from VSIX..."
+3. Select the downloaded `.vsix` file
 
 ## Features & Usage
 
@@ -22,16 +22,10 @@ This feature allows you to copy the content, the directory structure, or both, f
 
 **How to use:**
 
-* **Configure and Copy via Status Bar:**
-  * Click the files icon in the status bar (bottom right). This will open a QuickPick menu.
-  * The first item, "Copy & Close", immediately copies using the current settings (shown in its description) and closes the menu. You can select this by pressing `Enter`.
-  * The other items allow you to toggle "Copy Content" and "Copy Structure" ON or OFF. Selecting one of these will update the setting and refresh the menu, keeping the selected toggle option active.
-  * Your choices are saved for future use.
-* **Direct Copy (using last saved configuration):**
-  * Use the keyboard shortcut:
-    * Windows/Linux: `Ctrl+K Ctrl+C`
-    * Mac: `Cmd+K Cmd+C`
-  * Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) and run "Copy All Open Files". This will use the settings last configured via the status bar QuickPick menu.
+* Click the files icon in the status bar (bottom right) to open a QuickPick.
+* The first item, "Copy & Close", immediately copies using the current settings.
+* Toggle "Copy Content" and "Copy Structure" ON/OFF to configure.
+* Use "Copy Import List" to copy a compact, single-line list for importing later.
 
 **Output Format:**
 
@@ -87,3 +81,32 @@ my-project/
 ├── package.json
 └── README.md
 ```
+
+### 3. Import/Open Files from Import List
+
+Use a concise, single-line Import List that is trivial to paste into the QuickPick input and to parse.
+
+**How to use:**
+
+* Use "Copy Import List" in the QuickPick to copy the Import List for your current tabs.
+* Paste the line into the QuickPick input and press Enter to import.
+
+**Format:**
+
+* Single workspace root:
+
+  ```plaintext
+  root:my-project src/app.ts src/utils/math.ts
+  ```
+
+* Mixed/absolute-only:
+
+  ```plaintext
+  C:\code\proj\src\app.ts C:\code\proj\src\utils\math.ts
+  ```
+
+**Behavior:**
+
+* Relative paths are resolved against the workspace named after `root:`.
+* Absolute paths are opened directly.
+* Non-existent files are skipped; focus is preserved.

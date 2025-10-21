@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { copyDirectoryStructure } from './dir'
-import { copyOpenFilesHelper, showCopyOptionsPanel } from './ui'
+import { copyImportListForOpenFiles, copyOpenFilesHelper, importOpenFilesFromClipboard, showCopyOptionsPanel } from './ui'
 
 export function activate(context: vscode.ExtensionContext) {
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
@@ -26,6 +26,16 @@ export function activate(context: vscode.ExtensionContext) {
     await copyDirectoryStructure(folderUri)
   })
   context.subscriptions.push(copyStructureDisposable)
+
+  const importFromClipboardDisposable = vscode.commands.registerCommand('vscode-copy-open-files.importOpenFilesFromClipboard', async () => {
+    await importOpenFilesFromClipboard()
+  })
+  context.subscriptions.push(importFromClipboardDisposable)
+
+  const copyImportListDisposable = vscode.commands.registerCommand('vscode-copy-open-files.copyImportList', async () => {
+    await copyImportListForOpenFiles()
+  })
+  context.subscriptions.push(copyImportListDisposable)
 }
 
 export function deactivate() {}

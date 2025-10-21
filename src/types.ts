@@ -5,5 +5,5 @@ export interface FileTreeNode {
 }
 
 export interface ConfigQuickPickItem extends vscode.QuickPickItem {
-  id: 'toggleContent' | 'toggleStructure' | 'copyAndClose'
+  id: 'toggleContent' | 'toggleStructure' | 'copyAndClose' | 'importFromInput' | 'copyImportList'
 }
