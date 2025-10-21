@@ -3,7 +3,7 @@
   "name": "vscode-copy-open-files",
   "displayName": "vscode-copy-open-files",
   "type": "module",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "packageManager": "bun@1.3.0",
   "description": "Copy the contents of all open files",
