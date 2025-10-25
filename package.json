@@ -21,7 +21,52 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "contributes": {},
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-copy-open-files.copyAllOpenFiles",
+        "title": "Copy All Open Files",
+        "category": "Copy Open Files"
+      },
+      {
+        "command": "vscode-copy-open-files.copyDirectoryStructure",
+        "title": "Copy Directory Structure",
+        "category": "Copy Open Files"
+      },
+      {
+        "command": "vscode-copy-open-files.showCopyOptionsPanel",
+        "title": "Configure & Copy Open Files",
+        "category": "Copy Open Files"
+      },
+      {
+        "command": "vscode-copy-open-files.copyImportList",
+        "title": "Copy Import List (Open Files)",
+        "category": "Copy Open Files"
+      },
+      {
+        "command": "vscode-copy-open-files.importOpenFilesFromClipboard",
+        "title": "Import Open Files from Clipboard",
+        "category": "Copy Open Files"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vscode-copy-open-files.copyAllOpenFiles",
+        "key": "ctrl+k ctrl+c",
+        "mac": "cmd+k cmd+c",
+        "when": "editorTextFocus || resourceScheme == 'file'"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "vscode-copy-open-files.copyDirectoryStructure",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
   "scripts": {
     "vscode:prepublish": "bun run build",
     "build": "tsdown",
