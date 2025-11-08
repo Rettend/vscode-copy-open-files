@@ -16,7 +16,7 @@
   ],
   "main": "./out/extension.cjs",
   "engines": {
-    "vscode": "^1.105.0"
+    "vscode": "1.99.3"
   },
   "activationEvents": [
     "onStartupFinished"
@@ -85,7 +85,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.2.0",
     "@types/bun": "^1.3.2",
-    "@types/vscode": "^1.105.0",
+    "@types/vscode": "1.99.3",
     "@typescript/native-preview": "^7.0.0-dev.20251108.1",
     "@vscode/vsce": "^3.7.0",
     "bumpp": "^10.3.1",
