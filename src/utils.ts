@@ -209,3 +209,15 @@ export function buildOpenFilesTree(fileUris: vscode.Uri[], currentWorkspaceFolde
 
   return overallStructureString
 }
+
+export function notify(message: string, level: 'info' | 'warn' | 'error' = 'info'): void {
+  if (level === 'info') {
+    vscode.window.setStatusBarMessage(message, 3000)
+  }
+  else if (level === 'warn') {
+    vscode.window.showWarningMessage(message)
+  }
+  else {
+    vscode.window.showErrorMessage(message)
+  }
+}

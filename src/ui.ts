@@ -1,7 +1,7 @@
 import type { ConfigQuickPickItem } from './types'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
-import { buildOpenFilesTree } from './utils'
+import { buildOpenFilesTree, notify } from './utils'
 
 function _getOpenUniqueFileUris(): vscode.Uri[] {
   const tabs = vscode.window.tabGroups.all.flatMap(group => group.tabs)
@@ -33,7 +33,7 @@ export async function copyOpenFilesHelper(copyContent: boolean, copyStructure: b
   const fileUris = _getOpenUniqueFileUris()
 
   if (fileUris.length === 0) {
-    vscode.window.showWarningMessage('No open files found to copy.')
+    notify('No open files found to copy.', 'warn')
     return
   }
 
@@ -59,10 +59,10 @@ export async function copyOpenFilesHelper(copyContent: boolean, copyStructure: b
 
   if (output.trim()) {
     await vscode.env.clipboard.writeText(output.trimEnd())
-    vscode.window.showInformationMessage('Selected open file information copied to clipboard.')
+    notify('Selected open file information copied.', 'info')
   }
   else {
-    vscode.window.showInformationMessage('Nothing to copy based on selected options.')
+    notify('Nothing to copy with current options.', 'warn')
   }
 }
 
@@ -93,13 +93,13 @@ export function buildImportListLine(fileUris: vscode.Uri[], workspaceFolder?: vs
 export async function copyImportListForOpenFiles(): Promise<void> {
   const fileUris = _getOpenUniqueFileUris()
   if (fileUris.length === 0) {
-    vscode.window.showWarningMessage('No open files found to copy.')
+    notify('No open files found to copy.', 'warn')
     return
   }
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
   const line = buildImportListLine(fileUris, workspaceFolder)
   await vscode.env.clipboard.writeText(line)
-  vscode.window.showInformationMessage('Import List copied to clipboard.')
+  notify('Import List copied.', 'info')
 }
 
 function parseImportList(text: string): { rootName?: string, paths: string[] } {
@@ -124,7 +124,7 @@ function parseImportList(text: string): { rootName?: string, paths: string[] } {
 async function importFromImportList(text: string): Promise<void> {
   const { rootName, paths } = parseImportList(text)
   if (paths.length === 0) {
-    vscode.window.showWarningMessage('No files found in the pasted Import List.')
+    notify('No files found in Import List.', 'warn')
     return
   }
 
@@ -163,7 +163,7 @@ async function importFromImportList(text: string): Promise<void> {
   }
 
   if (uris.length === 0) {
-    vscode.window.showInformationMessage('No existing files found to open from the Import List.')
+    notify('No existing files to open.', 'warn')
     return
   }
 
@@ -183,12 +183,12 @@ async function importFromImportList(text: string): Promise<void> {
     }
     catch {}
   }
-  vscode.window.showInformationMessage(`Opened ${opened} file(s) from Import List${opened < paths.length ? ' (some were missing and skipped)' : ''}.`)
+  notify(`Opened ${opened} file(s)${opened < paths.length ? ' (some missing)' : ''}.`, 'info')
 }
 
 export async function showCopyOptionsPanel(
   context: vscode.ExtensionContext,
-  activeItemId?: 'toggleContent' | 'toggleStructure' | 'copyAndClose',
+  activeItemId?: 'toggleContent' | 'toggleStructure' | 'copy',
 ): Promise<void> {
   const currentCopyContent = context.globalState.get<boolean>('vscode-copy-open-files.copyContent', true)
   const currentCopyStructure = context.globalState.get<boolean>('vscode-copy-open-files.copyStructure', true)
@@ -200,14 +200,19 @@ export async function showCopyOptionsPanel(
   qp.matchOnDetail = true
   const makeConfigItems = (): ConfigQuickPickItem[] => ([
     {
-      label: '$(clippy) Copy & Close',
+      label: '$(clippy) Copy',
       description: `Content: ${currentCopyContent ? 'ON' : 'OFF'}, Structure: ${currentCopyStructure ? 'ON' : 'OFF'}`,
-      id: 'copyAndClose',
+      id: 'copy',
     },
     {
       label: '$(clippy) Copy Import List',
       description: 'Copy open files to import them later',
       id: 'copyImportList',
+    },
+    {
+      label: '$(clippy) Copy Compact',
+      description: 'Token-efficiently copy structure',
+      id: 'copyCompact',
     },
     {
       label: `${currentCopyContent ? '$(check)' : '$(circle-slash)'} Copy Content`,
@@ -249,11 +254,15 @@ export async function showCopyOptionsPanel(
         qp.hide()
         await copyImportListForOpenFiles()
       }
+      else if (selectedItem.id === 'copyCompact') {
+        qp.hide()
+        await copyCompactStructure()
+      }
       else if (selectedItem.id === 'importFromInput') {
         qp.hide()
         await importFromImportList(qp.value)
       }
-      else if (selectedItem.id === 'copyAndClose') {
+      else if (selectedItem.id === 'copy') {
         qp.hide()
         await copyOpenFilesHelper(currentCopyContent, currentCopyStructure)
       }
@@ -291,16 +300,148 @@ export async function showCopyOptionsPanel(
   qp.show()
 }
 
+function _uniqueUris(fileUris: vscode.Uri[]): vscode.Uri[] {
+  return Array.from(new Set(fileUris.map(u => u.toString()))).map(s => vscode.Uri.parse(s))
+}
+
+function _relativePaths(fileUris: vscode.Uri[], workspaceFolder?: vscode.WorkspaceFolder): string[] {
+  const unique = _uniqueUris(fileUris)
+  const rels = unique.map((u) => {
+    if (workspaceFolder && u.fsPath.startsWith(workspaceFolder.uri.fsPath)) {
+      return path.relative(workspaceFolder.uri.fsPath, u.fsPath).replace(/\\/g, '/')
+    }
+    return u.fsPath.replace(/\\/g, '/')
+  })
+  return rels
+}
+
+interface TreeNode { [name: string]: TreeNode | null }
+
+function _addPathToTree(tree: TreeNode, segments: string[]): void {
+  if (segments.length === 0)
+    return
+  const [head, ...tail] = segments
+  if (!(head in tree))
+    tree[head] = tail.length === 0 ? null : {}
+  const node = tree[head]
+  if (node && tail.length > 0)
+    _addPathToTree(node as TreeNode, tail)
+}
+
+function _buildTree(paths: string[]): TreeNode {
+  const tree: TreeNode = {}
+  for (const p of paths) {
+    const segs = p.split('/').filter(Boolean)
+    _addPathToTree(tree, segs)
+  }
+  return tree
+}
+
+function _isChain(node: TreeNode): boolean {
+  const keys = Object.keys(node)
+  if (keys.length !== 1)
+    return false
+  const only = node[keys[0]]
+  if (only === null)
+    return true
+  return _isChain(only as TreeNode)
+}
+
+function _compressChain(node: TreeNode): string {
+  const parts: string[] = []
+  let current: TreeNode | null = node
+  while (current) {
+    const keys = Object.keys(current)
+    if (keys.length !== 1)
+      break
+    const k = keys[0]
+    parts.push(k)
+    const next = current[k]
+    if (next === null) {
+      return parts.join('/')
+    }
+    current = next as TreeNode
+  }
+  return parts.join('/')
+}
+
+function _formatBraceTree(node: TreeNode): string {
+  const entries = Object.entries(node).sort(([a], [b]) => a.localeCompare(b))
+  const parts: string[] = []
+  for (const [name, child] of entries) {
+    if (child === null) {
+      parts.push(name)
+    }
+    else {
+      // If the subtree is a chain, compress to name/.../leaf
+      if (_isChain(child)) {
+        parts.push(`${name}/${_compressChain(child)}`)
+      }
+      else {
+        parts.push(`${name}/${_formatBraceTree(child)}`)
+      }
+    }
+  }
+  if (parts.length <= 1)
+    return parts[0] ?? ''
+  return `{${parts.join(',')}}`
+}
+
+function _groupPaths(paths: string[], depth: number): Array<{ head: string, tails: string[] }> {
+  const map = new Map<string, string[]>()
+  for (const p of paths) {
+    const segs = p.split('/').filter(Boolean)
+    const headLen = Math.max(1, Math.min(depth, Math.max(1, segs.length - 1)))
+    const head = segs.slice(0, headLen).join('/')
+    const tail = segs.slice(headLen).join('/')
+    if (!map.has(head))
+      map.set(head, [])
+    if (tail)
+      map.get(head)!.push(tail)
+  }
+  return Array.from(map.entries()).map(([head, tails]) => ({ head, tails }))
+}
+
+async function copyCompactStructure(): Promise<void> {
+  const fileUris = _getOpenUniqueFileUris()
+  if (fileUris.length === 0) {
+    notify('No open files found to copy.', 'warn')
+    return
+  }
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+  const rels = _relativePaths(fileUris, workspaceFolder)
+
+  // Adopt former Option 1 logic (groupDepth=2) as canonical compact format.
+  const groupDepth = 2
+  const groups = _groupPaths(rels, groupDepth)
+  const tokens: string[] = []
+  for (const { head, tails } of groups.sort((a, b) => a.head.localeCompare(b.head))) {
+    let token = head
+    if (tails.length > 0) {
+      const tree = _buildTree(tails)
+      const body = _formatBraceTree(tree)
+      token = `${head}/${body}`
+    }
+    tokens.push(token)
+  }
+  let result = tokens.join(' ')
+  if (workspaceFolder)
+    result = tokens.map(t => `${workspaceFolder.name}/${t}`).join(' ')
+
+  await vscode.env.clipboard.writeText(result)
+  notify('Compact structure copied.', 'info')
+}
+
 export async function importOpenFilesFromClipboard(): Promise<void> {
   try {
     const clipboardText = await vscode.env.clipboard.readText()
     if (!clipboardText || !clipboardText.trim()) {
-      vscode.window.showWarningMessage('Clipboard is empty or has no Import List to import.')
+      notify('Clipboard empty or no Import List.', 'warn')
       return
     }
     await importFromImportList(clipboardText)
   }
   catch (err) {
-    vscode.window.showErrorMessage(`Failed to import from clipboard: ${err}`)
+    notify(`Failed to import clipboard: ${err}`, 'error')
   }
 }

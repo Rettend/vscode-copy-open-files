@@ -23,9 +23,10 @@ This feature allows you to copy the content, the directory structure, or both, f
 **How to use:**
 
 * Click the files icon in the status bar (bottom right) to open a QuickPick.
-* The first item, "Copy & Close", immediately copies using the current settings.
+* The first item, "Copy", immediately copies using the current settings.
 * Toggle "Copy Content" and "Copy Structure" ON/OFF to configure.
 * Use "Copy Import List" to copy a compact, single-line list for importing later.
+* Use "Copy Compact" to copy an LLM-friendly directory listing (token-efficient).
 
 **Output Format:**
 
@@ -81,6 +82,20 @@ my-project/
 ├── package.json
 └── README.md
 ```
+
+### Compact Directory Output (LLM-Friendly)
+
+When you only need the directory structure for LLMs, use one of the compact modes from the QuickPick:
+
+* Copy Compact – Brace-grouped by top-level folders. Very compact while preserving hierarchy.
+
+  Example:
+
+  ```plaintext
+  my-project/packages/pkg/{package.json,src/{core/{index.ts,util.ts},client/{index.tsx}}}
+  ```
+
+In most cases, this compact format offers the best token efficiency while staying clear for LLMs.
 
 ### 3. Import/Open Files from Import List
 

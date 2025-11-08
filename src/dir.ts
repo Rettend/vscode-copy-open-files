@@ -1,6 +1,6 @@
 import * as path from 'node:path'
 import * as vscode from 'vscode'
-import { buildDirectoryStructure, findGitignore, loadIgnoreRules } from './utils'
+import { buildDirectoryStructure, findGitignore, loadIgnoreRules, notify } from './utils'
 
 export async function copyDirectoryStructure(folderUri: vscode.Uri | undefined): Promise<void> {
   if (!folderUri) {
@@ -37,9 +37,9 @@ export async function copyDirectoryStructure(folderUri: vscode.Uri | undefined):
 
     output += await buildDirectoryStructure(folderUri, folderUri, initialIg)
     await vscode.env.clipboard.writeText(output.trim())
-    vscode.window.showInformationMessage(`Directory structure of "${folderName}" copied to clipboard.`)
+    notify(`Directory structure of "${folderName}" copied.`, 'info')
   }
   catch (err) {
-    vscode.window.showErrorMessage(`Error copying directory structure: ${err}`)
+    notify(`Error copying directory structure: ${err}`, 'error')
   }
 }

@@ -5,7 +5,7 @@
   "type": "module",
   "version": "0.0.5",
   "private": true,
-  "packageManager": "bun@1.3.0",
+  "packageManager": "bun@1.3.2",
   "description": "Copy the contents of all open files",
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
   ],
   "main": "./out/extension.cjs",
   "engines": {
-    "vscode": "^1.99.0"
+    "vscode": "^1.105.0"
   },
   "activationEvents": [
     "onStartupFinished"
@@ -55,6 +55,12 @@
         "key": "ctrl+k ctrl+c",
         "mac": "cmd+k cmd+c",
         "when": "editorTextFocus || resourceScheme == 'file'"
+      },
+      {
+        "command": "vscode-copy-open-files.showCopyOptionsPanel",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "editorTextFocus || resourceScheme == 'file'"
       }
     ],
     "menus": {
@@ -77,15 +83,15 @@
     "release": "bumpp && bun run package"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^6.0.0",
-    "@types/bun": "^1.3.0",
-    "@types/vscode": "^1.99.0",
-    "@typescript/native-preview": "^7.0.0-dev.20251021.1",
-    "@vscode/vsce": "^3.6.2",
+    "@antfu/eslint-config": "^6.2.0",
+    "@types/bun": "^1.3.2",
+    "@types/vscode": "^1.105.0",
+    "@typescript/native-preview": "^7.0.0-dev.20251108.1",
+    "@vscode/vsce": "^3.7.0",
     "bumpp": "^10.3.1",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.1",
     "ignore": "^7.0.5",
-    "taze": "^19.8.1",
+    "taze": "^19.9.0",
     "tsdown": "latest",
     "typescript": "^5.9.3"
   }
