@@ -1,12 +1,12 @@
 # VS Code Copy Open Files & Directory Structure
 
-Simple extension that provides two main functionalities:
+Simple extension that:
 
 1. Copies the contents and/or directory structure of all currently open files in your VS Code window.
 2. Copies the directory structure of a selected folder, respecting `.gitignore` rules.
 3. Imports and opens files from a pasted Import List.
 
-Perfect for sharing code context or project structure with LLMs or colleagues.
+Perfect for sharing code context or project structure with LLMs!
 
 ## Installation
 
